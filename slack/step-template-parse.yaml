@@ -1,0 +1,12 @@
+# StepTemplate: parse and handle a Slack event payload.
+apiVersion: orchestrator.dev/v2
+kind: StepTemplate
+metadata:
+  name: parse-slack-event
+spec:
+  description: "Parse Slack event payload and determine appropriate action"
+  prompt: >-
+    You received a Slack event. The webhook payload is in the task goal.
+    Parse the event type and content, then take the appropriate action.
+    For message events, analyze the message text and respond.
+    For slash commands, execute the requested operation.

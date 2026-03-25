@@ -1,0 +1,18 @@
+# Trigger: fires when an issue comment is created.
+# Webhook URL: http://<host>:<port>/webhook/github-issue-comment
+apiVersion: orchestrator.dev/v2
+kind: Trigger
+metadata:
+  name: github-issue-comment
+spec:
+  event:
+    source: webhook
+    webhook:
+      secret:
+        fromRef: github-webhook
+      signatureHeader: X-Hub-Signature-256
+    filter:
+      condition: "payload_action == 'created'"
+  action:
+    workflow: handle-issue-comment
+    workspace: default

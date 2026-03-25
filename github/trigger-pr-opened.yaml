@@ -1,0 +1,18 @@
+# Trigger: fires when a pull request is opened.
+# Webhook URL: http://<host>:<port>/webhook/github-pr-opened
+apiVersion: orchestrator.dev/v2
+kind: Trigger
+metadata:
+  name: github-pr-opened
+spec:
+  event:
+    source: webhook
+    webhook:
+      secret:
+        fromRef: github-webhook
+      signatureHeader: X-Hub-Signature-256
+    filter:
+      condition: "payload_action == 'opened'"
+  action:
+    workflow: handle-pr
+    workspace: default

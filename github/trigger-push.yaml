@@ -1,0 +1,18 @@
+# Trigger: fires on git push events.
+# Webhook URL: http://<host>:<port>/webhook/github-push
+apiVersion: orchestrator.dev/v2
+kind: Trigger
+metadata:
+  name: github-push
+spec:
+  event:
+    source: webhook
+    webhook:
+      secret:
+        fromRef: github-webhook
+      signatureHeader: X-Hub-Signature-256
+    filter:
+      condition: "payload_ref != ''"
+  action:
+    workflow: handle-push
+    workspace: default

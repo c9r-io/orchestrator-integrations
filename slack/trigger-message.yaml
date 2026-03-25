@@ -1,0 +1,18 @@
+# Trigger: fires when a Slack message event is received.
+# Webhook URL: http://<host>:<port>/webhook/slack-message
+apiVersion: orchestrator.dev/v2
+kind: Trigger
+metadata:
+  name: slack-message
+spec:
+  event:
+    source: webhook
+    webhook:
+      secret:
+        fromRef: slack-signing
+      signatureHeader: X-Slack-Signature
+    filter:
+      condition: "payload_type == 'event_callback'"
+  action:
+    workflow: handle-slack-message
+    workspace: default

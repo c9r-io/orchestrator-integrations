@@ -1,0 +1,18 @@
+# Trigger: fires when a Slack slash command is invoked.
+# Webhook URL: http://<host>:<port>/webhook/slack-slash-command
+apiVersion: orchestrator.dev/v2
+kind: Trigger
+metadata:
+  name: slack-slash-command
+spec:
+  event:
+    source: webhook
+    webhook:
+      secret:
+        fromRef: slack-signing
+      signatureHeader: X-Slack-Signature
+    filter:
+      condition: "payload_command != ''"
+  action:
+    workflow: handle-slash-command
+    workspace: default
