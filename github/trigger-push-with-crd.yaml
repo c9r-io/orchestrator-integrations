@@ -1,0 +1,21 @@
+# Trigger: fires on git push events (CRD plugin variant).
+# Uses the GitHubWebhook CRD for signature verification and payload normalization
+# instead of the built-in HMAC path.
+#
+# Requires: crd-github-webhook.yaml applied first.
+# Webhook URL: http://<host>:<port>/webhook/github-push
+apiVersion: orchestrator.dev/v2
+kind: Trigger
+metadata:
+  name: github-push
+spec:
+  event:
+    source: webhook
+    webhook:
+      crdRef: GitHubWebhook
+      signatureHeader: X-Hub-Signature-256
+    filter:
+      condition: "payload_event == 'push'"
+  action:
+    workflow: handle-push
+    workspace: default

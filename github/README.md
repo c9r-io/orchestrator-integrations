@@ -43,6 +43,63 @@ orchestrator apply -f trigger-issue-comment.yaml --project myproject
 | File | Description |
 |------|-------------|
 | `secrets-template.yaml` | SecretStore template for GitHub Webhook Secret |
-| `trigger-push.yaml` | Trigger for push events |
-| `trigger-pr-opened.yaml` | Trigger for PR opened events |
-| `trigger-issue-comment.yaml` | Trigger for issue comment events |
+| `trigger-push.yaml` | Trigger for push events (built-in HMAC) |
+| `trigger-pr-opened.yaml` | Trigger for PR opened events (built-in HMAC) |
+| `trigger-issue-comment.yaml` | Trigger for issue comment events (built-in HMAC) |
+
+## Advanced: CRD Plugin Approach
+
+The triggers above use the built-in HMAC signature verification path. For more control — such as custom authentication logic or payload normalization — you can use the **CRD plugin system** instead.
+
+A CRD plugin defines `interceptor` and `transformer` phases that run as shell commands in the webhook pipeline:
+
+- **`interceptor`** (`webhook.authenticate`) — replaces built-in HMAC verification. Receives the raw body and headers via environment variables. Exit 0 to accept, non-zero to reject.
+- **`transformer`** (`webhook.transform`) — normalizes the payload before it reaches your workflow. Receives JSON on stdin, outputs transformed JSON to stdout.
+
+### Setup
+
+```bash
+# Apply the CRD definition (includes interceptor + transformer plugins)
+orchestrator apply -f crd-github-webhook.yaml
+
+# Apply the CRD-based trigger (uses crdRef instead of inline secret)
+orchestrator apply -f trigger-push-with-crd.yaml --project myproject
+```
+
+### How It Works
+
+The `crd-github-webhook.yaml` defines a `GitHubWebhook` CRD with two plugins:
+
+1. **`verify-github-signature`** (interceptor) — verifies the `X-Hub-Signature-256` header using `orchestrator tool webhook-verify-hmac`
+2. **`normalize-github-event`** (transformer) — wraps the raw payload in a common envelope with `platform`, `event`, `repo`, and `sender` fields, making downstream workflows platform-agnostic
+
+The trigger references the CRD via `crdRef: GitHubWebhook`. When a webhook arrives, the daemon runs the CRD's plugins instead of the built-in HMAC path.
+
+### CRD Plugin Manifest Files
+
+| File | Description |
+|------|-------------|
+| `crd-github-webhook.yaml` | CRD definition with interceptor + transformer plugins |
+| `trigger-push-with-crd.yaml` | Push trigger using `crdRef` for CRD-based authentication |
+
+### Writing Your Own Plugins
+
+Each plugin is a shell command. The daemon provides context via environment variables:
+
+**Interceptor** (`webhook.authenticate`):
+| Variable | Description |
+|----------|-------------|
+| `WEBHOOK_BODY` | Raw request body |
+| `WEBHOOK_HEADER_<NAME>` | HTTP headers (uppercased, hyphens → underscores) |
+| `PLUGIN_NAME` | Plugin name |
+| `CRD_KIND` | Owner CRD kind |
+
+**Transformer** (`webhook.transform`):
+| Input | Description |
+|-------|-------------|
+| `stdin` | JSON payload |
+| `stdout` | Transformed JSON (must be valid JSON) |
+| `PLUGIN_NAME` | Plugin name |
+| `CRD_KIND` | Owner CRD kind |
+
+All plugin executions are audited in the `plugin_audit` table with identity, transport, and result.

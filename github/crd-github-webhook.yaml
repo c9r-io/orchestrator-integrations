@@ -1,0 +1,52 @@
+# CRD: GitHubWebhook — defines interceptor and transformer plugins
+# for GitHub webhook authentication and payload normalization.
+#
+# Triggers that set `crdRef: GitHubWebhook` will use these plugins
+# instead of the built-in HMAC verification path.
+apiVersion: orchestrator.dev/v2
+kind: CustomResourceDefinition
+metadata:
+  name: githubwebhooks.integrations.orchestrator.dev
+spec:
+  kind: GitHubWebhook
+  plural: githubwebhooks
+  group: integrations.orchestrator.dev
+  scope: Cluster
+  versions:
+    - name: v1
+      schema:
+        type: object
+  plugins:
+    # Interceptor: verify GitHub's HMAC-SHA256 signature.
+    # Runs at the webhook.authenticate phase — exit 0 to accept, non-zero to reject.
+    # Receives: WEBHOOK_BODY, WEBHOOK_HEADER_X_HUB_SIGNATURE_256, and all other headers.
+    - name: verify-github-signature
+      type: interceptor
+      phase: webhook.authenticate
+      timeout: 3
+      command: |
+        orchestrator tool webhook-verify-hmac \
+          --secret-ref github-webhook \
+          --key webhook_secret \
+          --signature "$WEBHOOK_HEADER_X_HUB_SIGNATURE_256" \
+          --body "$WEBHOOK_BODY"
+
+    # Transformer: normalize GitHub event payloads into a common envelope.
+    # Receives the raw payload on stdin, outputs transformed JSON to stdout.
+    # This makes downstream workflows platform-agnostic.
+    - name: normalize-github-event
+      type: transformer
+      phase: webhook.transform
+      timeout: 3
+      command: |
+        read payload
+        event_type="$WEBHOOK_HEADER_X_GITHUB_EVENT"
+        echo "$payload" | jq -c \
+          --arg event "$event_type" \
+          '{
+            platform: "github",
+            event: $event,
+            repo: .repository.full_name,
+            sender: .sender.login,
+            payload: .
+          }'

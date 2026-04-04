@@ -26,6 +26,10 @@ orchestrator apply -f my-slack-secrets.yaml --project myproject
 orchestrator apply -f slack/ --project myproject
 ```
 
+## CRD Plugin System
+
+For advanced use cases — custom authentication, payload normalization, or periodic maintenance — integrations can leverage the **CRD plugin system**. Define a `CustomResourceDefinition` with `interceptor`, `transformer`, or `cron` plugins, then reference it from triggers via `crdRef`. See the [GitHub integration](github/) for a working example with both the basic HMAC path and the CRD plugin approach.
+
 ## Prerequisites
 
 - [Agent Orchestrator](https://github.com/c9r-io/orchestrator) v0.2.0+
