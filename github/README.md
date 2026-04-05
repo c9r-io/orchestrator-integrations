@@ -4,7 +4,7 @@ Connect GitHub webhook events to the Agent Orchestrator.
 
 ## Prerequisites
 
-- Agent Orchestrator v0.2.0+ with `--webhook-bind` enabled
+- Agent Orchestrator v0.2.0+ (webhook server enabled by default on `127.0.0.1:19090`)
 - A GitHub repository with admin access
 
 ## Setup

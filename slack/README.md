@@ -4,7 +4,7 @@ Connect Slack events and slash commands to the Agent Orchestrator via webhooks.
 
 ## Prerequisites
 
-- Agent Orchestrator v0.2.0+ with `--webhook-bind` enabled
+- Agent Orchestrator v0.2.0+ (webhook server enabled by default on `127.0.0.1:19090`)
 - A Slack workspace where you can create apps
 
 ## Setup

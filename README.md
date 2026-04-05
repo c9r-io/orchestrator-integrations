@@ -33,7 +33,7 @@ For advanced use cases — custom authentication, payload normalization, or peri
 ## Prerequisites
 
 - [Agent Orchestrator](https://github.com/c9r-io/orchestrator) v0.2.0+
-- Daemon running with `--webhook-bind <addr>` enabled
+- Daemon running (webhook server enabled by default on `127.0.0.1:19090`)
 - Platform-specific API credentials (see each integration's README)
 
 ## Webhook URL Format
