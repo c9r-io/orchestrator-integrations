@@ -1,0 +1,30 @@
+# StepTemplate: send a reply via AgentLair after workflow completion.
+#
+# Use this as the final step in any workflow that handles external tasks.
+# It replies to the original message thread so the calling agent knows
+# the task is complete.
+#
+# Required inputs:
+#   - AGENTLAIR_API_KEY  (injected from SecretStore)
+#   - REPLY_TO           (message_id from the inbox trigger)
+#   - REPLY_BODY         (JSON string with result payload)
+apiVersion: orchestrator.dev/v2
+kind: StepTemplate
+metadata:
+  name: agentlair-reply
+spec:
+  description: "Send a structured reply to the originating agent via AgentLair"
+  command: |
+    curl -s -X POST https://agentlair.dev/v1/email/send \
+      -H "Authorization: Bearer ${AGENTLAIR_API_KEY}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"in_reply_to\": \"${REPLY_TO}\",
+        \"subject\": \"Re: ${SUBJECT}\",
+        \"text_body\": \"${REPLY_BODY}\"
+      }"
+  env:
+    - name: AGENTLAIR_API_KEY
+      fromSecret:
+        store: agentlair-key
+        key: api_key
