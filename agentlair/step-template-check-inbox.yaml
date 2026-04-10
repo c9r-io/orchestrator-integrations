@@ -1,0 +1,23 @@
+# StepTemplate: poll AgentLair inbox for new messages (alternative to webhooks).
+#
+# Use in a scheduled workflow if you prefer polling over push webhooks.
+# Outputs JSON array of unread messages to stdout for downstream steps.
+#
+# Required inputs:
+#   - AGENTLAIR_API_KEY  (injected from SecretStore)
+apiVersion: orchestrator.dev/v2
+kind: StepTemplate
+metadata:
+  name: agentlair-check-inbox
+spec:
+  description: "Poll AgentLair inbox for unread messages from external agents"
+  command: |
+    curl -s https://agentlair.dev/v1/email/inbox \
+      -H "Authorization: Bearer ${AGENTLAIR_API_KEY}" \
+      -G --data-urlencode "unread=true" \
+      --data-urlencode "limit=10"
+  env:
+    - name: AGENTLAIR_API_KEY
+      fromSecret:
+        store: agentlair-key
+        key: api_key
