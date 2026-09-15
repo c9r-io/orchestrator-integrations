@@ -1,0 +1,34 @@
+# Trigger: fires when a new message arrives in the AgentLair inbox.
+#
+# How it works:
+# 1. Your orchestrator polls AgentLair inbox via a scheduled workflow or
+#    receives a webhook notification from AgentLair (/v1/email/webhooks).
+# 2. The trigger fires for each unread message, passing the full message
+#    envelope as the workflow input.
+#
+# Webhook URL to register at AgentLair:
+#   POST /v1/email/webhooks with body:
+#   { "url": "http://<host>:<port>/webhook/agentlair-inbox" }
+apiVersion: orchestrator.dev/v2
+kind: Trigger
+metadata:
+  name: agentlair-inbox
+spec:
+  event:
+    source: webhook
+    webhook:
+      secret:
+        fromRef: agentlair-key
+        key: api_key
+      signatureHeader: X-AgentLair-Signature
+    filter:
+      condition: "event_type == 'email.received'"
+  action:
+    workflow: handle-external-task
+    workspace: default
+    inputMapping:
+      message_id: "$.payload.message_id"
+      from: "$.payload.from"
+      subject: "$.payload.subject"
+      body: "$.payload.text_body"
+      reply_to: "$.payload.reply_to"
